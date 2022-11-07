@@ -1,0 +1,15 @@
+.page-status {height: 100vh;
+  width: 100vw;
+  position:absolute;
+  left: 50%;
+  bottom: 50%;
+  z-index: 1;
+  display: block;}
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+  a:hover {
+    color: white;
+  }
+body {background: #EEEEEE;}
