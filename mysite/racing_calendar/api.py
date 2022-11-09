@@ -5,19 +5,26 @@ import json
 
 def Events_api(request): #send the next three days of events to frontend
     if(request.method=="GET"):
-        events = Event.objects.all().filter(dateTime__range=[datetime.datetime.today().date(), datetime.datetime.today().date() + datetime.timedelta(days=2)])
+        events = Event.objects.all().filter(dateTime__range=[datetime.datetime.today().date(), datetime.datetime.today().date() + datetime.timedelta(days=3)])
         day1 = []
         day2 = []
         day3 = []
+        nextEvent = "";
+        foundNextEvent = False
         for i in range(len(events)):
             if(events[i].dateTime.date()==datetime.datetime.today().date()):
+                if(datetime.datetime.today().time()<events[i].dateTime.time() and foundNextEvent==False):
+                    nextEvent = events[i].name, "@", events[i].dateTime.time();
+                    foundNextEvent = True
                 day1.append(events[i].to_dict())
             elif(events[i].dateTime.date()==datetime.datetime.today().date() + datetime.timedelta(days=1)):
                 day2.append(events[i].to_dict())
             else:
                 day3.append(events[i].to_dict())
-        print("\n\nday1:", day1, "\n\n")
-        return JsonResponse({'day1': day1, 'day2': day2, 'day3': day3})
+        if(foundNextEvent==False):
+            nextEvent = day2[0]['name']+" @ "+day2[0]['time'];
+            foundNextEvent = True
+        return JsonResponse({'day1': day1, 'day2': day2, 'day3': day3, 'nextEvent': nextEvent})
     return JsonResponse({})
 
 def Allevents_api(request): #sends all events to frontend
@@ -49,7 +56,7 @@ def DeleteEvent_api(request): #deletes an event
         e.delete()
     return JsonResponse({})
 
-def AddEvent_api(request):
+def AddEvent_api(request): #adds an event
     if(request.method=="POST"):
         body = json.loads(request.body.decode('utf-8'))
         name=body['name']

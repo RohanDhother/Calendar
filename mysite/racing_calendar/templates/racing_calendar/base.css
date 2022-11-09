@@ -13,3 +13,5 @@
     color: white;
   }
 body {background: #EEEEEE;}
+#calendar th, td {border-bottom: none;}
+#calendar td {text-align: left;}
