@@ -3,4 +3,75 @@
 
 <!-- Tables of the days and the events -->
 {% block context %}
+<div id="app">
+  {% csrf_token %}
+  <h1> Admin</h1>
+  <div v-for="(event, i) in events">
+    <h2>[[ events[i][0] ]]</h2>
+    <div>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Time</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>[[ events[i][1].name ]]</td>
+            <td>[[ events[i][1].dateTime ]]</td>
+            <td>
+              <button type="button" class="btn btn-outline-dark" @click="DeleteEvent(events[i])">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}
+{% block scripts %}
+<script>
+let myApp = Vue.createApp({
+  delimiters: ["[[", "]]"],
+  data() {
+    return {
+      events: [],
+    }
+  },
+  async created() {//This fetches the events from the database
+    let response = await fetch("{% url 'racing_calendar:Allevents api' %}");
+    if (response.ok){
+      let data = await response.json();
+      this.events = data.events;
+    }
+    else {
+      alert("Failed" + response.status);
+    }
+  },
+  methods: {
+    async DeleteEvent(e){ //Deletes an event
+      console.log("e:", e);
+      console.log("e[1].id:", e[1].id);
+      let response = await fetch("{% url 'racing_calendar:DeleteEvent api' %}",{
+            method: "DELETE",
+            headers: {
+              "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            },
+            body:JSON.stringify({
+              id: e[1].id
+            })
+          });
+          if(response.ok){
+            this.events.splice(this.events.indexOf(e), 1)
+          }
+          else {
+            alert("Failed" + response.status);
+          }
+    }
+  }
+})
+  myApp.mount('#app');
+  </script>
+  {% endblock %}

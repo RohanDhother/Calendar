@@ -10,4 +10,6 @@ path('admin/', views.admin, name='admin'),
 
 #paths to the api functions
 path('api/events/', api.events_api, name='events api'),
+path('api/Allevents/', api.Allevents_api, name='Allevents api'),
+path('api/DeleteEvent/', api.DeleteEvent_api, name='DeleteEvent api'),
 ]

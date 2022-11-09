@@ -7,6 +7,7 @@ class Event(models.Model):
 
     def to_dict(self):
         return{
+        'id': self.id,
         'name': self.name,
         'dateTime': self.dateTime.strftime("%H:%M")
         }
