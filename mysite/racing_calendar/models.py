@@ -9,5 +9,6 @@ class Event(models.Model):
         return{
         'id': self.id,
         'name': self.name,
-        'dateTime': self.dateTime.strftime("%H:%M")
+        'time': self.dateTime.strftime("%H:%M"),
+        'date': self.dateTime.strftime("%A(%d/%m/%y)")
         }

@@ -14,7 +14,7 @@
   <div class='text-center col m-4 p-3'>
     <table>
       <thead>
-        <th>[[ day1[0] ]]</th>
+        <th v-if="day1.length>0">[[ day1[0].date ]]</th>
       </thead>
       <tr v-for="(event, i) in day1">
         <td>
@@ -28,6 +28,9 @@
   </div>
   <div class='text-center col m-4 p-3'>
     <table>
+      <thead>
+        <th v-if="day1.length>0">[[ day1[0].date ]]</th>
+      </thead>
       <tr v-for="(event, i) in day2">
         <td>
           [[ event.dateTime ]]
@@ -40,6 +43,9 @@
   </div>
   <div class='text-center col m-4 p-3'>
     <table>
+      <thead>
+        <th v-if="day1.length>0">[[ day1[0].date ]]</th>
+      </thead>
       <tr v-for="(event, i) in day3">
         <td>
           [[ event.dateTime ]]
@@ -65,7 +71,7 @@ let myApp = Vue.createApp({
     }
   },
   async created() {//This fetches the events from the database
-    let response = await fetch("{% url 'racing_calendar:events api' %}");
+    let response = await fetch("{% url 'racing_calendar:Events api' %}");
     if (response.ok){
       let data = await response.json();
       this.day1 = data.day1;

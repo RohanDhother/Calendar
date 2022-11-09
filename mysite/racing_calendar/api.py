@@ -3,10 +3,10 @@ import datetime
 from django.http import JsonResponse
 import json
 
-def events_api(request): #send the next three days of events to frontend
+def Events_api(request): #send the next three days of events to frontend
     if(request.method=="GET"):
         events = Event.objects.all().filter(dateTime__range=[datetime.datetime.today().date(), datetime.datetime.today().date() + datetime.timedelta(days=2)])
-        day1 = [datetime.datetime.today().strftime("%A")]
+        day1 = []
         day2 = []
         day3 = []
         for i in range(len(events)):
@@ -22,16 +22,23 @@ def events_api(request): #send the next three days of events to frontend
 
 def Allevents_api(request): #sends all events to frontend
     if(request.method=="GET"):
-        eventsList = Event.objects.all().order_by('-dateTime')
-        events = []
+        eventsList = Event.objects.all().order_by('dateTime')
+        days = []
+        numDays = 0
         for i in range(len(eventsList)):
-            try:
-                index = events.index(eventsList[i].dateTime.strftime("%A(%d:%m:%y)"))
-                events[index][1].append(eventsList[i].to_dict())
-            except:
-                events.append([eventsList[i].dateTime.strftime("%A(%d:%m:%y)"), eventsList[i].to_dict()])
+            j = 0
+            found = False
+            while(j<len(days) and found == False):
+                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d:%m:%y)")):
+                    days[j].append(eventsList[i].to_dict())
+                    found = True
+                j = j + 1
+            if(found==False):
+                days.append([eventsList[i].to_dict()])
+                numDays = numDays + 1
         return JsonResponse({
-        'events': events
+        'days': days,
+        'numDays': numDays
         })
 
 def DeleteEvent_api(request): #deletes an event
@@ -40,4 +47,16 @@ def DeleteEvent_api(request): #deletes an event
         id=body['id']
         e = Event.objects.get(id=id)
         e.delete()
+    return JsonResponse({})
+
+def AddEvent_api(request):
+    if(request.method=="POST"):
+        body = json.loads(request.body.decode('utf-8'))
+        name=body['name']
+        dateTime=body['dateTime']
+        date = [int(x) for x in dateTime.split("T")[0].split("-")]
+        time = [int(x) for x in dateTime.split("T")[1].split(":")]
+        e = Event(name=name, dateTime=datetime.datetime(date[0], date[1], date[2], time[0], time[1]))
+        e.save()
+        return JsonResponse({'event': [e.to_dict()]})
     return JsonResponse({})

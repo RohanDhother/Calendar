@@ -6,8 +6,38 @@
 <div id="app">
   {% csrf_token %}
   <h1> Admin</h1>
-  <div v-for="(event, i) in events">
-    <h2>[[ events[i][0] ]]</h2>
+  <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" @click="OpenAddEvent()" data-bs-target="#staticBackdrop_AddEvent">
+    Add Event
+  </button>
+  <div class="modal fade" id="staticBackdrop_AddEvent" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Add Event</h5>
+          <button type="button" id="EventClose" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="addEventName" placeholder="">
+              <label for="floatingInput">Name</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input type="datetime-local" class="form-control" id="addEventDateTime" placeholder="">
+              <label for="floatingInput">DateTime</label>
+            </div>
+            <div class="invalid-feedback" id="eventAddEmpty">
+              Please fill in all fields.
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" @click="AddEvent()">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-for="(x, i) in numDays">
+    <h2>[[ days[i][0].date ]]</h2>
     <div>
       <table class="table table-hover">
         <thead>
@@ -18,11 +48,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>[[ events[i][1].name ]]</td>
-            <td>[[ events[i][1].dateTime ]]</td>
+          <tr v-for="(event, y) in days[i]">
+            <td>[[ days[i][y].name ]]</td>
+            <td>[[ days[i][y].time ]]</td>
             <td>
-              <button type="button" class="btn btn-outline-dark" @click="DeleteEvent(events[i])">Delete</button>
+              <button type="button" class="btn btn-outline-dark" @click="DeleteEvent(y, i)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -37,38 +67,130 @@ let myApp = Vue.createApp({
   delimiters: ["[[", "]]"],
   data() {
     return {
-      events: [],
+      days: [],
+      numDays: 0,
     }
   },
   async created() {//This fetches the events from the database
     let response = await fetch("{% url 'racing_calendar:Allevents api' %}");
     if (response.ok){
       let data = await response.json();
-      this.events = data.events;
+      this.days = data.days;
+      this.numDays = data.numDays;
     }
     else {
       alert("Failed" + response.status);
     }
   },
   methods: {
-    async DeleteEvent(e){ //Deletes an event
-      console.log("e:", e);
-      console.log("e[1].id:", e[1].id);
+    async DeleteEvent(y,i){ //Deletes an event
       let response = await fetch("{% url 'racing_calendar:DeleteEvent api' %}",{
             method: "DELETE",
             headers: {
               "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
             },
             body:JSON.stringify({
-              id: e[1].id
+              id: this.days[i][y].id
             })
           });
           if(response.ok){
-            this.events.splice(this.events.indexOf(e), 1)
+            this.days[i].splice(y, 1);
+            if(this.days[i].length==0){
+              this.days.splice(i,1);
+              this.numDays = this.numDays - 1;
+            }
           }
           else {
             alert("Failed" + response.status);
           }
+    },
+    OpenAddEvent(){ //clears the add form fields and resets user feedback
+        document.getElementById("addEventName").style.border = "1px solid #ced4da";
+        document.getElementById("addEventName").value = "";
+        document.getElementById("eventAddEmpty").style.display = "none";
+        document.getElementById("addEventDateTime").style.border = "1px solid #ced4da";
+        document.getElementById("addEventDateTime").value = "";
+    },
+    async AddEvent(){ //Adds an event to the calendar
+      document.getElementById("addEventName").style.border = "1px solid #ced4da";
+      document.getElementById("addEventDateTime").style.border = "1px solid #ced4da";
+      let name = document.getElementById("addEventName").value;
+      let dateTime = document.getElementById("addEventDateTime").value;
+      let empty = false;
+      if(name.length==0){
+        document.getElementById("addEventName").style.border = "3px solid red";
+        empty = true;
+      }
+      if(dateTime.length==0){
+        document.getElementById("addEventDateTime").style.border = "3px solid red";
+        empty = true;
+      }
+      if(empty==true){
+        document.getElementById("eventAddEmpty").style.display = "block";
+      }
+      else{
+        let response = await fetch("{% url 'racing_calendar:AddEvent api' %}",{
+        method: "POST",
+        headers: {
+          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+        },
+        body:JSON.stringify({
+          name: name,
+          dateTime: dateTime
+        })
+      });
+      if(response.ok){
+        let data = await response.json();
+        let found = false;
+        let i = 0;
+        while(i<this.numDays && found==false){
+          if(this.days[i][0].date==data.event[0].date){
+            this.SortEvent(data.event[0], i);
+            found = true;
+          }
+          i = i + 1;
+        }
+        if(found==false){
+          this.SortDay(data.event);
+          this.numDays = this.numDays + 1;
+        }
+        document.getElementById("EventClose").click();
+      }
+      }
+    },
+    SortEvent(e, i){ //Sorts an event in a day (newer to older)
+      let temp = "";
+      for(let j = 0;j<this.days[i].length;j++){
+        if(this.days[i][j].time>=e.time){
+          temp = this.days[i][j];
+          this.days[i][j] = e;
+          e = temp;
+        }
+      }
+      this.days[i].push(e);
+    },
+    SortDay(e){ //Sorts the days in the calendar (older to newer)
+      let temp = "";
+      for(let i = 0;i<this.numDays;i++){
+        dayX = this.days[i][0].date.split("(")[1].split(")")[0].split("/");
+        dayY = e[0].date.split("(")[1].split(")")[0].split("/");
+        if(dayX[2]>dayY[2]){
+          temp = this.days[i];
+          this.days[i] = e;
+          e = temp;
+        }
+        else if(dayX[1]>dayY[1]){
+          temp = this.days[i];
+          this.days[i] = e;
+          e = temp;
+        }
+        else if(dayX[0]>dayY[0]){
+          temp = this.days[i];
+          this.days[i] = e;
+          e = temp;
+        }
+      }
+      this.days.push(e);
     }
   }
 })
