@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block context %}
+<div id="app">
 <!-- The current time and the next event that will occur -->
 <div class='text-center m-4 p-3'>
 <h3>Next</h3>
@@ -11,13 +12,73 @@
 <!-- Calendar of the next few days of events -->
 <div class="row align-items-center">
   <div class='text-center col m-4 p-3'>
-    day 1
+    <table>
+      <thead>
+        <th>[[ day1[0] ]]</th>
+      </thead>
+      <tr v-for="(event, i) in day1">
+        <td>
+          [[ event.dateTime ]]
+        </td>
+        <td>
+          [[ event.name ]]
+        </td>
+      </tr>
+    </table>
   </div>
   <div class='text-center col m-4 p-3'>
-    day 2
+    <table>
+      <tr v-for="(event, i) in day2">
+        <td>
+          [[ event.dateTime ]]
+        </td>
+        <td>
+          [[ event.name ]]
+        </td>
+      </tr>
+    </table>
   </div>
   <div class='text-center col m-4 p-3'>
-    day 3
+    <table>
+      <tr v-for="(event, i) in day3">
+        <td>
+          [[ event.dateTime ]]
+        </td>
+        <td>
+          [[ event.name ]]
+        </td>
+      </tr>
+    </table>
   </div>
 </div>
+</div>
 {% endblock %}
+{% block scripts %}
+<script>
+let myApp = Vue.createApp({
+  delimiters: ["[[", "]]"],
+  data() {
+    return {
+      day1: [],
+      day2: [],
+      day3: [],
+    }
+  },
+  async created() {//This fetches the subjects from the database
+    let response = await fetch("{% url 'racing_calendar:events api' %}");
+    if (response.ok){
+      let data = await response.json();
+      this.day1 = data.day1;
+      this.day2 = data.day2;
+      this.day3 = data.day3;
+    }
+    else {
+      alert("Failed" + response.status);
+    }
+  },
+  methods: {
+  }
+})
+  myApp.mount('#app');
+  </script>
+  {% endblock %}
