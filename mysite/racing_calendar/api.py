@@ -13,7 +13,7 @@ def Events_api(request): #send the next three days of events to frontend
             j = 0
             found = False
             while(j<len(days) and found == False):
-                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d:%m:%y)")):
+                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d/%m/%y)")):
                     days[j].append(eventsList[i].to_dict())
                     found = True
                 j = j + 1
@@ -35,7 +35,7 @@ def Allevents_api(request): #sends all events to frontend
             j = 0
             found = False
             while(j<len(days) and found == False):
-                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d:%m:%y)")):
+                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d/%m/%y)")):
                     days[j].append(eventsList[i].to_dict())
                     found = True
                 j = j + 1

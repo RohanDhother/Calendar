@@ -15,3 +15,4 @@
 body {background: #EEEEEE;}
 #calendar th, td {border-bottom: none;}
 #calendar td {text-align: left;}
+* {font-weight: 500;}
