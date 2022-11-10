@@ -10,37 +10,15 @@
 <h3>[[ nextEvent ]]</h3></b>
 </div>
 <!-- Calendar of the next few days of events -->
-<div id="calendar" class="row align-items-center">
+<div id="calendar" class="row align-items-center" v-for="(x, i) in numDays">
   <div class='text-center col m-4 p-3'>
     <table class="table table-responsive">
       <thead>
-        <th colspan="2" v-if="day1.length>0">[[ day1[0].date.split("(")[0] ]]</th>
+        <th colspan="2" v-if="days[i].length>0">[[ days[i][0].date.split("(")[0] ]]</th>
       </thead>
-      <tr v-for="(event, i) in day1" class="w-auto">
-        <td>[[ event.time ]]</td>
-        <td>[[ event.name ]]</td>
-      </tr>
-    </table>
-  </div>
-  <div class='text-center col m-4 p-3'>
-    <table class="table table-responsive">
-      <thead>
-        <th colspan="2" v-if="day2.length>0">[[ day2[0].date.split("(")[0]  ]]</th>
-      </thead>
-      <tr v-for="(event, i) in day2" class="w-auto">
-        <td>[[ event.time ]]</td>
-        <td>[[ event.name ]]</td>
-      </tr>
-    </table>
-  </div>
-  <div class='text-center col m-4 p-3'>
-    <table class="table table-responsive">
-      <thead>
-        <th colspan="2" v-if="day3.length>0">[[ day3[0].date.split("(")[0]  ]]</th>
-      </thead>
-      <tr v-for="(event, i) in day3" class="w-auto">
-        <td>[[ event.time ]]</td>
-        <td>[[ event.name ]]</td>
+      <tr v-for="(event, y) in days[i]" class="w-auto">
+        <td>[[ days[i][y].name ]]</td>
+        <td>[[ days[i][y].time ]]</td>
       </tr>
     </table>
   </div>
@@ -62,19 +40,20 @@ let myApp = Vue.createApp({
   delimiters: ["[[", "]]"],
   data() {
     return {
-      day1: [],
-      day2: [],
-      day3: [],
+      days: [],
+      numDays: 0,
       time: 0,
       nextEvent: "",
+      count: 0,
     }
   },
   created() { //calls the function every second
-    this.UpdateAll();
+    this.UpdateTime();
+    this.UpdateEvents();
     setInterval(this.UpdateAll, 1000);
   },
   methods: {
-    async UpdateAll(){
+    UpdateTime(){
       let hours = new Date().getHours();
       if(hours <10){hours="0"+hours}
       let mins = new Date().getMinutes()
@@ -83,19 +62,25 @@ let myApp = Vue.createApp({
       if(secs <10){secs="0"+secs}
       this.time = hours+":"+mins+":"+secs; //Updates the time
       document.getElementById("time").textContent = this.time;
-      let response = await fetch("{% url 'racing_calendar:Events api' %}"); //This fetches the events from the database
-      if (response.ok){
-        let data = await response.json();
-        this.day1 = data.day1;
-        this.day2 = data.day2;
-        this.day3 = data.day3;
-        this.nextEvent = data.nextEvent;
-        document.getElementById("date").textContent = this.day1[0].date.split("(")[1].split(")")[0];
-      }
-      else {
-        alert("Failed" + response.status);
-      }
+      if(this.count>4){
+        this.UpdateEvents();
+      this.count = 0;
     }
+    this.count = this.count + 1;
+  },
+  async UpdateEvents(){
+    let response = await fetch("{% url 'racing_calendar:Events api' %}"); //This fetches the events from the database
+    if (response.ok){
+      let data = await response.json();
+      this.days = data.days;
+      this.numDays = data.numDays;
+      this.nextEvent = data.nextEvent;
+      document.getElementById("date").textContent = data.date;
+    }
+    else {
+      alert("Failed" + response.status);
+    }
+  }
   }
 })
   myApp.mount('#app');

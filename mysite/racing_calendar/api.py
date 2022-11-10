@@ -5,26 +5,25 @@ import json
 
 def Events_api(request): #send the next three days of events to frontend
     if(request.method=="GET"):
-        events = Event.objects.all().filter(dateTime__range=[datetime.datetime.today().date(), datetime.datetime.today().date() + datetime.timedelta(days=3)])
-        day1 = []
-        day2 = []
-        day3 = []
-        nextEvent = "";
-        foundNextEvent = False
-        for i in range(len(events)):
-            if(events[i].dateTime.date()==datetime.datetime.today().date()):
-                if(datetime.datetime.today().time()<events[i].dateTime.time() and foundNextEvent==False):
-                    nextEvent = events[i].name, "@", events[i].dateTime.time();
-                    foundNextEvent = True
-                day1.append(events[i].to_dict())
-            elif(events[i].dateTime.date()==datetime.datetime.today().date() + datetime.timedelta(days=1)):
-                day2.append(events[i].to_dict())
-            else:
-                day3.append(events[i].to_dict())
-        if(foundNextEvent==False):
-            nextEvent = day2[0]['name']+" @ "+day2[0]['time'];
-            foundNextEvent = True
-        return JsonResponse({'day1': day1, 'day2': day2, 'day3': day3, 'nextEvent': nextEvent})
+        eventsList = Event.objects.all().filter(dateTime__gte=datetime.datetime.today()).order_by('dateTime')
+        days = []
+        numDays = 0
+        nextEvent = ""
+        for i in range(len(eventsList)):
+            j = 0
+            found = False
+            while(j<len(days) and found == False):
+                if(days[j][0]['date']==eventsList[i].dateTime.strftime("%A(%d:%m:%y)")):
+                    days[j].append(eventsList[i].to_dict())
+                    found = True
+                j = j + 1
+            if(found==False):
+                days.append([eventsList[i].to_dict()])
+                numDays = numDays + 1
+        if(len(days)!=0):
+            nextEvent = days[0][0]['name']+" @ "+days[0][0]['time']
+        return JsonResponse({'days': days,
+        'numDays': numDays, 'nextEvent': nextEvent, 'date': datetime.datetime.today().strftime("%d/%m/%y")})
     return JsonResponse({})
 
 def Allevents_api(request): #sends all events to frontend
